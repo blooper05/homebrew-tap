@@ -1,0 +1,64 @@
+name: Bump casks on schedule or request
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Twice a day at 06:00 and 18:00 UTC
+    - cron: "0 6,18 * * *"
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  autobump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Homebrew
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+
+      - name: Configure Git user
+        uses: Homebrew/actions/git-user-config@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+        with:
+          username: github-actions[bot]
+
+      - name: Check for outdated casks
+        id: livecheck
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: |
+          set -euo pipefail
+          json="$(brew livecheck --cask kanary --json)"
+          echo "$json"
+          echo "$json" | jq -e '
+            type == "array" and length == 1
+            and (.[0].version.latest | type == "string" and length > 0)
+            and (.[0].version.outdated | type == "boolean")
+          ' > /dev/null
+          latest="$(echo "$json" | jq -r '.[0].version.latest')"
+          [[ "$latest" =~ ^[0-9]+(\.[0-9]+)*$ ]]
+          {
+            echo "outdated=$(echo "$json" | jq -r '.[0].version.outdated')"
+            echo "latest=$latest"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Bump kanary cask
+        if: steps.livecheck.outputs.outdated == 'true'
+        working-directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+        run: |
+          set -euo pipefail
+          brew bump-cask-pr --write-only --commit \
+            --version="${{ steps.livecheck.outputs.latest }}" \
+            kanary
+
+      - name: Try pushing
+        if: steps.livecheck.outputs.outdated == 'true'
+        uses: Homebrew/actions/git-try-push@1f8e202ffddf94def7f42f6fa3a482e821489f9c # 2026.07.10.1
+        with:
+          token: ${{ github.token }}
+          directory: ${{ steps.set-up-homebrew.outputs.repository-path }}
+          remote: origin
+          branch: main
