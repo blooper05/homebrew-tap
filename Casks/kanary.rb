@@ -1,6 +1,6 @@
 cask "kanary" do
-  version "3.5.1"
-  sha256 "d8c1943d9f35b5b320a1b556d0373987e564a50f8c619f97e8b54ab9b8c69a6e"
+  version "3.5.3"
+  sha256 "77dc4150ad13c82cd09336f8327ceeaa12a07b209f91f9ba77e3d718cd560ff8"
 
   url "https://cdn.kanary.download/releases/Kanary-#{version}.zip"
   name "Kanary"
@@ -13,8 +13,8 @@ cask "kanary" do
   end
 
   auto_updates true
-  depends_on macos: :sonoma
   depends_on arch: :arm64
+  depends_on macos: :sonoma
 
   app "Kanary.app"
 
