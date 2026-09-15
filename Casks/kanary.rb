@@ -1,6 +1,6 @@
 cask "kanary" do
-  version "3.5.3"
-  sha256 "77dc4150ad13c82cd09336f8327ceeaa12a07b209f91f9ba77e3d718cd560ff8"
+  version "3.5.4"
+  sha256 "833e394b6a519ce3a65369980e7d21556224c4a17cac473c1e286a32062be42f"
 
   url "https://cdn.kanary.download/releases/Kanary-#{version}.zip"
   name "Kanary"
